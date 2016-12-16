@@ -1,0 +1,146 @@
+<h1>Complex Example</h1>
+
+<p>Here we will try to exercise all the functions of the <code>blackfriday.Renderer</code>
+interface.  That is, <em>all</em> the Markdown we know how to convert to HTML.</p>
+
+<h2>Standard Block-Level Elements</h2>
+
+<p>Paragraphs, obviously. And lists:</p>
+
+<ul>
+<li>This</li>
+<li>That</li>
+</ul>
+
+<p>(Ah, one must have something between lists.  Bug?)</p>
+
+<ol>
+<li>First</li>
+<li>Second</li>
+</ol>
+
+<p>Rule:</p>
+
+<hr />
+
+<blockquote>
+<p>Blockquote.</p>
+
+<p>&ndash; the blockheads</p>
+</blockquote>
+
+<h2>Inline Elements</h2>
+
+<p>We have <strong>bold</strong> and <em>emphasis</em> and <del>strikethrough</del> and what else?</p>
+
+<p>Conversions of &ldquo;quotes&rdquo; &ndash; and &lsquo;quotes&rsquo; &ndash; and dashes!</p>
+
+<p>No intra_emphasis, because we like C-style variables!</p>
+
+<h2>Verbatim HTML</h2>
+
+<p><span style="color:red">Like this</span> (bad idea, really).</p>
+
+<h3>Links</h3>
+
+<p><a href="http://kevinfrost.com/">Great Art</a>
+for <a href="http://kevinfrost.com/">reference</a>
+or for <a href="http://kevinfrost.com/">awesome</a>.</p>
+
+<h3>Images</h3>
+
+<p><img src="http://lv8.biztos.com/20040212/fff.gif" alt="random thing" title="Random Thing! LV8!" /></p>
+
+<h2>Autolinking</h2>
+
+<p>Search here: <a href="https://duckduckgo.com/">https://duckduckgo.com/</a></p>
+
+<h2>Fenced Code Blocks</h2>
+
+<p>Language is optional:</p>
+
+<pre><code>echo &quot;unknown lang&quot;
+</code></pre>
+
+<p>But useful:</p>
+
+<pre><code class="language-perl">die 'hoooha';
+</code></pre>
+
+<p>And apparently can be spaced:</p>
+
+<pre><code class="language-go">fmt.Println(&quot;ok by me&quot;)
+</code></pre>
+
+<p>Of course the old style must work as well:</p>
+
+<pre><code>10 PRINT &quot;I AM HERE &quot;
+20 GOTO 10
+</code></pre>
+
+<h2>LaTeX-style dash parsing</h2>
+
+<p>This is where one differentiates between the &ldquo;en dash&rdquo; &ndash; <em>ndash</em> &ndash; and
+the &ldquo;em dash&rdquo; &mdash; <em>mdash</em> &mdash; by the number of dashes used, i.e.
+<code>--</code> vs <code>---</code>.</p>
+
+<p>For a visual check:</p>
+
+<ul>
+<li>- dash</li>
+<li>&ndash; ndash (as in: &ldquo;1970-2016&rdquo;)</li>
+<li>&mdash; mdash (as in: &ldquo;here &mdash; or there!&rdquo;)</li>
+</ul>
+
+<p>Oddly, it seems to be built into Blackfriday, and not an option per se.</p>
+
+<h2>Tables</h2>
+
+<p>For very small tables, this does of course rock.  Stick that in your
+<code>asciidoc</code> and smoke it.</p>
+
+<table>
+<thead>
+<tr>
+<th>Ingredient</th>
+<th>Cost</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>South American Filet Mignon</td>
+<td>7000</td>
+</tr>
+
+<tr>
+<td>Ginger</td>
+<td>500</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Definition Lists</h2>
+
+<dl>
+<dt>Fröccs</dt>
+<dd>2:1 wine to soda water unless otherwise specified; cf. Kisfröccs.</dd>
+</dl>
+
+<h2>Smart Fractions</h2>
+
+<p><sup>1</sup>&frasl;<sub>2</sub> of <sup>1</sup>&frasl;<sub>2</sub> is usually <sup>1</sup>&frasl;<sub>4</sub>&hellip;</p>
+
+<h2>Not in Common</h2>
+
+<h3>Hard Line Breaks</h3>
+
+<p>For your poetic
+Needs and your poetry
+Feeds</p>
+
+<h3>Footnotes</h3>
+
+<p>Apparently we are doomed.[^1]</p>
+
+<p>[^1]: Doom being relative.</p>

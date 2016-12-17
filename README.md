@@ -135,7 +135,7 @@ which have their own licenses:
 
 [bf]: https://github.com/russross/blackfriday
 [yaml]: https://github.com/go-yaml/yaml
-[testify]: https://github.com/stretchr/testify/blob/master/LICENSE
+[testify]: https://github.com/stretchr/testify
 [docopt]: https://github.com/docopt/docopt.go
 [bf-lic]: https://github.com/russross/blackfriday/blob/master/LICENSE.txt
 [yaml-lic]: https://github.com/go-yaml/yaml/blob/v2/LICENSE

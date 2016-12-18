@@ -1,6 +1,8 @@
 # Frosted Markdown
 
-**WARNING: this is pre-release software and should be considered unstable.**
+**WARNING: this is alpha software and should be considered unstable.**
+
+In other words, a work in progress.  Like most other software.
 
 ## Synopsis
 
@@ -145,7 +147,7 @@ which have their own licenses:
 ## TODO
 
 * More documentation for the long-suffering laity.
-* Better test coverage (and arguably better tests).
+* Better test coverage (and arguably better tests).  100% at minimum!
 * LOTS more edge cases etc.
 * At least CONSIDER less-canonical, but faster, parsing.
     * Specifically, just strip off the top of the file w/o MD-processing it.

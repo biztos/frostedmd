@@ -1,14 +1,78 @@
-// cmd/fmd/main.go - Frosted Markdown tool.
+// The Frosted Markdown Tool.
 //
-// TODO:
-// * Batch processing (maybe)
-// * Make it stop printing "exit code 1" to STDERR on os.Exit(1)!
-// * Additional options for the frostedmd parser.
-// * Other output formats?  Anything useful? Meta only?
-// * Convert to confluence wiki page?  (Really?) If so what about the meta?
-// * Pure md->html function, in order to not keep another one around?
-// * Option to lowercase all tags in the JSON and/or YAML (how hard is this?)
-
+// STATUS
+//
+// This is alpha software and should be considered unstable.  For more
+// information please visit the main repo: https://github.com/biztos/frostedmd
+//
+// SYNOPSIS
+//
+// The fmd command converts Markdown files to structured data using the
+// frostedmd package.
+//
+//    $ fmd -i sample.md
+//    {
+//        "meta": {
+//            "Description": "Simple is as simple does.",
+//            "Tags": [
+//                "fmd",
+//                "golang",
+//                "nerdery"
+//            ],
+//            "Title": "FMD FTW"
+//        },
+//        "content": "< Base64-Encoded String >"
+//    }
+//
+// For more information simply invoke the program's help option:
+//
+//    fmd --help
+//
+// INSTALLATION
+//
+// Follow these steps to build your own:
+//
+//   go get -u github.com/biztos/frostedmd
+//   go build github.com/biztos/frostedmd/cmd/fmd
+//   ./fmd --version # should work!
+//
+// Binaries for a number of platforms will be made available as soon as this
+// tool is a little more stable.
+//
+// TODO
+//
+// Much work remains!
+//
+//  * Make it stop printing "exit code 1" to STDERR on os.Exit(1) etc.
+//    (Is this even possible in Go?)
+//
+//  * MAYBE Other output formats?  For instance "go-quoted?"
+//    (It would be nice to be able to tell FOR SURE what the parsed
+//    interface{} is, so e.g. timestamps can be debugged. Any other use-case?)
+//
+//  * Option to lowercase all tags in the JSON and/or YAML (how hard is this?)
+//
+//  * Options to fine-tune the parser behavior (maybe -x FooOption?)
+//
+//  * -b option to use MarkdownBasic (few/no extensions)
+//
+//  * -m option to only return the meta
+//
+//  * -c option to only return the content, without encoding it in JSON/YAML
+//    ( thus fmd -m FILE > f.json && fmd -c FILE > f.html)
+//
+//  * -p option to only convert to HTML
+//
+//  * -d option to produce a full HTML document
+//
+//  * --style=X option to use an optional canned stylesheet *or* file
+//    (included in full) *or* link to stylesheet (if neither file nor
+//    canned style option)
+//
+//  * --template=X option to use html/template and a file... MAYBE.
+//    Is this really useful for anything?  Wouldn't you need a bunch of
+//    template files? The tool is already at 3.4M, which is a little
+//    crazy, and adding template support would be at least another 1.1M.
 package main
 
 import (
@@ -55,6 +119,7 @@ type YamlRes struct {
 }
 
 func main() {
+
 	opts := getOpts()
 	b, err := ioutil.ReadFile(opts.File)
 	failOnError(opts, err, FILE_ERROR)
@@ -195,6 +260,7 @@ https://github.com/biztos/frostedmd
 Usage:
   fmd [options] FILE
   fmd --version
+  fmd --license
   fmd -h | --help
 
 Options:

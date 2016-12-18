@@ -1,13 +1,29 @@
 // fmd.go - Frosted Markdown
 // ------
 
-// Package frostedmd implements Frosted Markdown: standard Markdown to HTML
-// conversion with a meta map and a default title. Parsing and rendering are
-// handled by the excellent Blackfriday package; the Meta map is extracted
-// from the first code block encountered, but only if it is not preceded by
-// anything other than an optional header. The order can be reversed globally
-// by setting META_AT_END to true, or at the Parser level.  In reversed order
-// the meta code block must be the last element in the Markdown source.
+// Package frostedmd converts Markdown files to structured data and HTML.
+//
+// The structured data is extracted from a Meta Block if present: a code block
+// at the beginning (or, optionally, the end) of the file.  At the beginning
+// of the file, the Meta Block may optionally be preceded by a single heading.
+//
+//  # Sample Doc
+//
+//      # Meta:
+//      AmIYaml: true
+//      Tags: [foo, bar, baz, baloney]
+//
+//  There you are.
+//
+// Parsing and rendering are handled by the excellent Blackfriday package:
+// https://godoc.org/github.com/russross/blackfriday
+//
+// YAML processing is handled with the nearly canonical YAML package from
+// Canonical: https://godoc.org/gopkg.in/yaml.v2
+//
+// The Meta Block position can be reversed globally by setting META_AT_END to
+// true, or at the Parser level.  In reversed order the meta code block must
+// be the last element in the Markdown source.
 //
 // If the Meta contains no Title (nor "title" nor "TITLE") then the first
 // heading is used, if and only if that heading was not preceded by any
@@ -18,9 +34,6 @@
 //
 // If an appropriate meta block is found it will be excluded from the rendered
 // HTML content.
-//
-// NOTE: This package will most likely be renamed, and might also be moved out
-// of kisipar.  "Greysunday" was pretty tempting but then the sun came out...
 package frostedmd
 
 import (

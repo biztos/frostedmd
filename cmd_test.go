@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	// Third-party:
+	"github.com/biztos/testig" // well, first-party in a way...
 	"github.com/stretchr/testify/assert"
 
 	// Under test:
@@ -40,36 +41,6 @@ Options:
   -t, --test        Parse file but do not print any output on success.
   --license         Print the software license.
 `
-
-// TODO: build this into testify.assert, send a pull request?
-// TODO: ...or at least put it in our own library, say "testy" or something.
-// TODO: ...consider a "testy" library anyway?
-// (Because hey, it really sucks to not test the *nature* of the panic.)
-// (And because hey, I'm kinda testy...)
-func AssertPanicsWith(t *testing.T, f func(), exp, msg string) {
-
-	panicked := false
-	got := ""
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				panicked = true
-				got = fmt.Sprintf("%s", r)
-			}
-		}()
-		f()
-	}()
-
-	if !panicked {
-		assert.Fail(t, "Function did not panic.", msg)
-		t.FailNow()
-	} else if got != exp {
-		errMsg := fmt.Sprintf(
-			"Panic not as expected:\n  expected: %s\n    actual: %s",
-			exp, got)
-		assert.Fail(t, errMsg, msg)
-	}
-}
 
 func Test_NewCmd(t *testing.T) {
 
@@ -370,7 +341,7 @@ func Test_SetOptions_BadUsageForBools(t *testing.T) {
 		}
 		cmd := frostedmd.NewCmd("testing", "1.1.0", usage)
 		f := func() { cmd.SetOptions() }
-		AssertPanicsWith(t, f, exp, "panics as expected for "+key)
+		testig.AssertPanicsWith(t, f, exp, "panics as expected for "+key)
 	}
 
 }

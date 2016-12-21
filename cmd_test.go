@@ -62,14 +62,16 @@ func TestFail_SimpleError(t *testing.T) {
 
 	cmd := frostedmd.NewCmd("testing", "1.1.0", "anything")
 	var b bytes.Buffer
-	cmd.Stderr = bufio.NewWriter(&b)
+	w := bufio.NewWriter(&b)
+	cmd.Stderr = w
 	exited := -1
 	cmd.ExitFunction = func(c int) {
 		exited = c
 	}
 
 	cmd.Fail(errors.New("anything"))
-	assert.Equal("anything", b.String(), "error passed as-is")
+	w.Flush()
+	assert.Equal("anything\n", b.String(), "error passed as-is")
 	assert.Equal(frostedmd.CMD_OTHER_ERROR, exited,
 		"exited with 'other' error")
 
@@ -84,12 +86,14 @@ func TestLicenseOption(t *testing.T) {
 	cmd := frostedmd.NewCmd("testing", "1.1.0", STD_USAGE)
 
 	var b bytes.Buffer
-	cmd.Stdout = bufio.NewWriter(&b)
+	w := bufio.NewWriter(&b)
+	cmd.Stdout = w
 	exited := -1
 	cmd.ExitFunction = func(c int) {
 		exited = c
 	}
 	err := cmd.SetOptions()
+	w.Flush()
 	assert.Nil(err, "no error from SetOptions with --license")
 	assert.Regexp("^SOFTWARE LICENSES", b.String(), "looks license-y")
 	assert.Equal(0, exited, "exited with success")

@@ -94,7 +94,7 @@ func (c *Cmd) Fail(err error) {
 	switch e := err.(type) {
 	case CmdError:
 		if !e.Silent {
-			fmt.Fprintf(c.Stderr, e.Error())
+			fmt.Fprintln(c.Stderr, e.Error())
 		}
 		if !e.Force {
 			code := e.Code
@@ -106,7 +106,7 @@ func (c *Cmd) Fail(err error) {
 
 	default:
 		fmt.Fprintln(c.Stderr, err.Error())
-		c.ExitFunction(CMD_OPTIONS_ERROR)
+		c.ExitFunction(CMD_OTHER_ERROR)
 	}
 
 }

@@ -68,27 +68,27 @@ type Cmd struct {
 
 	// In order to make testing realistically possible in the command context
 	// we make these standard things overrideable:
-	ExitFunction func(int)
-	Stdout       io.Writer
-	Stderr       io.Writer
+	Exit   func(int)
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 // NewCmd returns a new Cmd for the given name, version and DocOpt usage
 // specification.
 func NewCmd(name, version, usage string) *Cmd {
 	return &Cmd{
-		Name:         name,
-		Version:      version,
-		Usage:        usage,
-		ExitFunction: os.Exit,
-		Stdout:       os.Stdout,
-		Stderr:       os.Stderr,
+		Name:    name,
+		Version: version,
+		Usage:   usage,
+		Exit:    os.Exit,
+		Stdout:  os.Stdout,
+		Stderr:  os.Stderr,
 	}
 }
 
 // Fail fails with a useful message based on err; if err is a CmdError
 // and has an exit code set, that is used, otherwise the "other" code is
-// used: CMD_OPTIONS_ERROR.
+// used: CMD_OTHER_ERROR.
 func (c *Cmd) Fail(err error) {
 
 	switch e := err.(type) {
@@ -99,14 +99,14 @@ func (c *Cmd) Fail(err error) {
 		if !e.Force {
 			code := e.Code
 			if code == 0 {
-				code = CMD_OPTIONS_ERROR
+				code = CMD_OTHER_ERROR
 			}
-			c.ExitFunction(code)
+			c.Exit(code)
 		}
 
 	default:
 		fmt.Fprintln(c.Stderr, err.Error())
-		c.ExitFunction(CMD_OTHER_ERROR)
+		c.Exit(CMD_OTHER_ERROR)
 	}
 
 }
@@ -223,41 +223,53 @@ func (c *Cmd) PrintResult() error {
 func (c *Cmd) SetOptions() error {
 
 	vString := c.Name + " " + c.Version
-	args, err := docopt.Parse(
+	args, _ := docopt.Parse(
 		c.Usage,
 		nil,     // use default os args
 		true,    // enable help option
 		vString, // the version string
 		false,   // do NOT require options first
-		true,    // let DocOpt exit on -v/-h/opts-error
+		true,    // let DocOpt exit on -v/-h/opts-error (thus ignore err)
 	)
-	if err != nil {
-		return CmdError{
-			Err:  err,
-			Code: CMD_OPTIONS_ERROR,
+
+	// These must be boolean or undefined:
+	// TODO: come up with a more generic wrapper for DocOpt that does all this
+	// stuff with introspection on the options type.
+	mustBool := []string{
+		"--json",
+		"--yaml",
+		"--indent",
+		"--nobase64",
+		"--force",
+		"--silent",
+		"--test",
+		"--content",
+		"--meta",
+		"--license",
+	}
+	have := map[string]bool{}
+	for _, key := range mustBool {
+		if val, ok := args[key]; ok {
+			if v, ok := val.(bool); ok {
+				have[key] = v
+			} else {
+				// Here we don't want to return as it's programmer error.
+				panic("Bad designation of bool opt in docopt usage: " + key)
+			}
 		}
+
 	}
 
-	// Let's try to be upstanding OSS citizens here, just in principle.
-	if license, _ := args["--license"].(bool); license {
-		fmt.Fprintln(c.Stdout, LicenseFullText())
-		c.ExitFunction(0)
-	}
-
-	// These will only fail if we screwed up the docopt stuff:
-	json, _ := args["--json"].(bool)
-	yaml, _ := args["--yaml"].(bool)
-	indent, _ := args["--indent"].(bool)
-	nobase64, _ := args["--nobase64"].(bool)
-	force, _ := args["--force"].(bool)
-	silent, _ := args["--silent"].(bool)
-	test, _ := args["--test"].(bool)
+	// This is the only string arg; again the caller might leave it out in
+	// favor of some other strategy.  However as of now it's not clear one
+	// even *could* set this to any type other than string in docopt, so we
+	// will not leave a hole in the test coverage for that.
 	file, _ := args["FILE"].(string)
 
 	// Only one output format please.
 	format := "json"
-	if yaml {
-		if json {
+	if have["--yaml"] {
+		if have["--json"] {
 			return CmdError{
 				Err:  errors.New("Only one format allowed."),
 				Code: CMD_OPTIONS_ERROR,
@@ -266,14 +278,30 @@ func (c *Cmd) SetOptions() error {
 		format = "yaml"
 	}
 
+	// Don't contradict what you want us to output.
+	if have["--meta"] && have["--content"] {
+		return CmdError{
+			Err:  errors.New("--meta and --content are mutually exclusive."),
+			Code: CMD_OPTIONS_ERROR,
+		}
+	}
+
+	// Let's try to be upstanding OSS citizens here, just in principle.
+	if have["--license"] {
+		fmt.Fprintln(c.Stdout, LicenseFullText())
+		c.Exit(0)
+	}
+
 	c.Options = &CmdOptions{
-		File:     file,
-		Format:   format,
-		Force:    force,
-		Silent:   silent,
-		Indent:   indent,
-		NoBase64: nobase64,
-		Test:     test,
+		File:        file,
+		Format:      format,
+		Force:       have["--force"],
+		Silent:      have["--silent"],
+		Indent:      have["--indent"],
+		NoBase64:    have["--nobase64"],
+		Test:        have["--test"],
+		ContentOnly: have["--content"],
+		MetaOnly:    have["--meta"],
 	}
 
 	return nil

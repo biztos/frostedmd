@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -40,7 +41,37 @@ Options:
   --license         Print the software license.
 `
 
-func TestNewCmd(t *testing.T) {
+// TODO: build this into testify.assert, send a pull request?
+// TODO: ...or at least put it in our own library, say "testy" or something.
+// TODO: ...consider a "testy" library anyway?
+// (Because hey, it really sucks to not test the *nature* of the panic.)
+// (And because hey, I'm kinda testy...)
+func AssertPanicsWith(t *testing.T, f func(), exp, msg string) {
+
+	panicked := false
+	got := ""
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				panicked = true
+				got = fmt.Sprintf("%s", r)
+			}
+		}()
+		f()
+	}()
+
+	if !panicked {
+		assert.Fail(t, "Function did not panic.", msg)
+		t.FailNow()
+	} else if got != exp {
+		errMsg := fmt.Sprintf(
+			"Panic not as expected:\n  expected: %s\n    actual: %s",
+			exp, got)
+		assert.Fail(t, errMsg, msg)
+	}
+}
+
+func Test_NewCmd(t *testing.T) {
 
 	assert := assert.New(t)
 
@@ -50,13 +81,13 @@ func TestNewCmd(t *testing.T) {
 	assert.Equal("1.1.0", cmd.Version, "Version sticks")
 	assert.Equal("anything", cmd.Usage, "Usage sticks")
 
-	assert.IsType(os.Exit, cmd.ExitFunction, "ExitFunction as expected")
+	assert.IsType(os.Exit, cmd.Exit, "Exit as expected")
 	assert.Equal(os.Stdout, cmd.Stdout, "Stdout as expected")
-	assert.Equal(os.Stderr, cmd.Stderr, "ExitFunction as expected")
+	assert.Equal(os.Stderr, cmd.Stderr, "Exit as expected")
 
 }
 
-func TestFail_SimpleError(t *testing.T) {
+func Test_Fail_SimpleError(t *testing.T) {
 
 	assert := assert.New(t)
 
@@ -65,7 +96,7 @@ func TestFail_SimpleError(t *testing.T) {
 	w := bufio.NewWriter(&b)
 	cmd.Stderr = w
 	exited := -1
-	cmd.ExitFunction = func(c int) {
+	cmd.Exit = func(c int) {
 		exited = c
 	}
 
@@ -77,7 +108,217 @@ func TestFail_SimpleError(t *testing.T) {
 
 }
 
-func TestLicenseOption(t *testing.T) {
+func Test_Fail_CmdError(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", "anything")
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	cmd.Stderr = w
+	exited := -1
+	cmd.Exit = func(c int) {
+		exited = c
+	}
+
+	err := frostedmd.CmdError{
+		Err:  errors.New("anything"),
+		Code: 123,
+	}
+	cmd.Fail(err)
+	w.Flush()
+	assert.Equal("anything\n", b.String(), "error passed as-is w/o file")
+	assert.Equal(123, exited,
+		"exited with passed error code")
+
+}
+
+func Test_Fail_CmdError_WithFile(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", "anything")
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	cmd.Stderr = w
+	exited := -1
+	cmd.Exit = func(c int) {
+		exited = c
+	}
+
+	err := frostedmd.CmdError{
+		File: "somefile",
+		Err:  errors.New("anything"),
+		Code: 123,
+	}
+	cmd.Fail(err)
+	w.Flush()
+	assert.Equal("somefile: anything\n", b.String(),
+		"error includes filename")
+	assert.Equal(123, exited,
+		"exited with passed error code")
+
+}
+
+func Test_Fail_CmdError_Silent(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", "anything")
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	cmd.Stderr = w
+	exited := -1
+	cmd.Exit = func(c int) {
+		exited = c
+	}
+
+	err := frostedmd.CmdError{
+		Silent: true,
+		Err:    errors.New("anything"),
+		Code:   123,
+	}
+	cmd.Fail(err)
+	w.Flush()
+	assert.Equal("", b.String(), "no error printed")
+	assert.Equal(123, exited, "exited with passed error code")
+
+}
+
+func Test_Fail_CmdError_Force(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", "anything")
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	cmd.Stderr = w
+	exited := -1
+	cmd.Exit = func(c int) {
+		exited = c
+	}
+
+	err := frostedmd.CmdError{
+		Force: true,
+		Err:   errors.New("anything"),
+		Code:  123,
+	}
+	cmd.Fail(err)
+	w.Flush()
+	assert.Equal("anything\n", b.String(), "error printed")
+	assert.Equal(-1, exited, "did not exit")
+
+}
+
+func Test_Fail_CmdError_ZeroCode(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", "anything")
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	cmd.Stderr = w
+	exited := -1
+	cmd.Exit = func(c int) {
+		exited = c
+	}
+
+	err := frostedmd.CmdError{
+		Err: errors.New("anything"),
+	}
+	cmd.Fail(err)
+	w.Flush()
+	assert.Equal("anything\n", b.String(), "error printed")
+	assert.Equal(frostedmd.CMD_OTHER_ERROR, exited,
+		"exited with 'other' code")
+
+}
+
+func Test_SetOptions_Minimalist(t *testing.T) {
+
+	assert := assert.New(t)
+
+	// It should be possible to run SetOptions without any of the options
+	// directly supported.
+	usage := `testing
+
+Usage:
+  testing DIR
+`
+
+	os.Args = []string{"testing", "could-be-a-dir"}
+	cmd := frostedmd.NewCmd("testing", "1.1.0", usage)
+	err := cmd.SetOptions()
+	assert.Nil(err, "no error on minimalist SetOptions")
+
+	exp := &frostedmd.CmdOptions{Format: "json"}
+	assert.EqualValues(exp, cmd.Options, "Options set to default values")
+
+}
+
+func Test_SetOptions_Maximalist(t *testing.T) {
+
+	assert := assert.New(t)
+
+	// Standard usage, with everything possible set.
+	os.Args = []string{
+		"testing",
+		"--yaml",
+		"--indent",
+		"--nobase64",
+		"--content",
+		"--force",
+		"--silent",
+		"--test",
+		"somefile",
+	}
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", STD_USAGE)
+	err := cmd.SetOptions()
+	assert.Nil(err, "no error on minimalist SetOptions")
+
+	exp := &frostedmd.CmdOptions{
+		Format:      "yaml",
+		Indent:      true,
+		NoBase64:    true,
+		ContentOnly: true,
+		Force:       true,
+		Silent:      true,
+		Test:        true,
+		File:        "somefile",
+	}
+	assert.EqualValues(exp, cmd.Options, "Options set to override values")
+
+}
+
+func Test_SetOptions_OutputContadiction(t *testing.T) {
+
+	assert := assert.New(t)
+
+	// Standard usage, with everything possible set.
+	os.Args = []string{
+		"testing",
+		"--content",
+		"--meta",
+		"somefile",
+	}
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", STD_USAGE)
+	err := cmd.SetOptions()
+	if assert.Error(err, "error set") {
+		assert.Equal("--meta and --content are mutually exclusive.",
+			err.Error(), "error string as expected")
+		if assert.IsType(frostedmd.CmdError{}, err) {
+			// This is rather awkward considering the above...
+			e, _ := err.(frostedmd.CmdError)
+			assert.Equal(frostedmd.CMD_OPTIONS_ERROR, e.Code,
+				"error code is 'options'")
+		}
+	}
+
+}
+
+func Test_SetOptions_LicenseOption(t *testing.T) {
 
 	assert := assert.New(t)
 
@@ -89,7 +330,7 @@ func TestLicenseOption(t *testing.T) {
 	w := bufio.NewWriter(&b)
 	cmd.Stdout = w
 	exited := -1
-	cmd.ExitFunction = func(c int) {
+	cmd.Exit = func(c int) {
 		exited = c
 	}
 	err := cmd.SetOptions()
@@ -97,4 +338,39 @@ func TestLicenseOption(t *testing.T) {
 	assert.Nil(err, "no error from SetOptions with --license")
 	assert.Regexp("^SOFTWARE LICENSES", b.String(), "looks license-y")
 	assert.Equal(0, exited, "exited with success")
+}
+
+func Test_SetOptions_BadUsageForBools(t *testing.T) {
+
+	// One is probably enough for the coverage metric but it's silly to not
+	// test them all, as long as we're here.
+	//
+	// NOTE: currently we have no equivalent for the string args because they
+	// are not options (actually it's only the one, FILE) and it seems not
+	// possible to miscast that in docopt.
+	shouldBool := []string{
+		"--json",
+		"--yaml",
+		"--indent",
+		"--nobase64",
+		"--force",
+		"--silent",
+		"--test",
+		"--content",
+		"--meta",
+		"--license",
+	}
+	for _, key := range shouldBool {
+		usage := fmt.Sprintf("t\n\nUsage:\n  t [%s=FOO] FILE\n", key)
+		exp := "Bad designation of bool opt in docopt usage: " + key
+		os.Args = []string{
+			"t",
+			key + "=123",
+			"somefile",
+		}
+		cmd := frostedmd.NewCmd("testing", "1.1.0", usage)
+		f := func() { cmd.SetOptions() }
+		AssertPanicsWith(t, f, exp, "panics as expected for "+key)
+	}
+
 }

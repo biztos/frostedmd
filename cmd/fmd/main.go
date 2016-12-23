@@ -81,15 +81,10 @@ const VERSION = "0.1.0"
 func main() {
 
 	cmd := frostedmd.NewCmd("fmd", VERSION, docOptUsageText())
-
-	if err := cmd.SetOptions(); err != nil {
+	if err := cmd.Run(); err != nil {
 		cmd.Fail(err)
-	}
-	if err := cmd.ParseFile(); err != nil {
-		cmd.Fail(err)
-	}
-	if err := cmd.PrintResult(); err != nil {
-		cmd.Fail(err)
+	} else {
+		cmd.Exit(0) // <-- facilitate testing!
 	}
 
 }

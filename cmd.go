@@ -25,6 +25,8 @@ const (
 	CMD_OTHER_ERROR         = 99
 )
 
+var DefaultExitFunction = os.Exit // override for testing main()
+
 // CmdOptions describes the options available to the command.  The standard
 // fmd command exposes all of them.
 type CmdOptions struct {
@@ -74,16 +76,34 @@ type Cmd struct {
 }
 
 // NewCmd returns a new Cmd for the given name, version and DocOpt usage
-// specification.
+// specification.  The Exit property is set to the DefaultExitFunction,
+// allowing a global override for testing.
 func NewCmd(name, version, usage string) *Cmd {
 	return &Cmd{
 		Name:    name,
 		Version: version,
 		Usage:   usage,
-		Exit:    os.Exit,
+		Exit:    DefaultExitFunction,
 		Stdout:  os.Stdout,
 		Stderr:  os.Stderr,
 	}
+}
+
+// Run calls the methods used for a standard command run in order: SetOptions,
+// ParseFile, and finally PrintResult.  The first error encountered is
+// returned, to (normally) be passed to Fail.  Note that in the interest
+// of simplicity, docopt is allowed to exit directly from within SetOptions.
+func (c *Cmd) Run() error {
+	if err := c.SetOptions(); err != nil {
+		return err
+	}
+	if err := c.ParseFile(); err != nil {
+		return err
+	}
+	if err := c.PrintResult(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Fail fails with a useful message based on err; if err is a CmdError
@@ -135,7 +155,7 @@ func (c *Cmd) ParseFile() error {
 	c.Result = res // cf. the Force option
 	if err != nil {
 		return CmdError{
-			Code:   CMD_FILE_ERROR,
+			Code:   CMD_PARSE_ERROR,
 			Err:    err,
 			File:   c.Options.File,
 			Silent: c.Options.Silent,

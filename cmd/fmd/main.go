@@ -53,11 +53,6 @@
 //
 //  * -b option to use MarkdownBasic (few/no extensions)
 //
-//  * -m option to only return the meta
-//
-//  * -c option to only return the content, without encoding it in JSON/YAML
-//    ( thus fmd -m FILE > f.json && fmd -c FILE > f.html)
-//
 //  * -p option to only convert to HTML
 //
 //  * -d option to produce a full HTML document
@@ -80,7 +75,7 @@ const VERSION = "0.1.0"
 
 func main() {
 
-	cmd := frostedmd.NewCmd("fmd", VERSION, docOptUsageText())
+	cmd := frostedmd.NewCmd("fmd", VERSION, DocOptUsageText)
 	if err := cmd.Run(); err != nil {
 		cmd.Fail(err)
 	} else {
@@ -89,9 +84,7 @@ func main() {
 
 }
 
-// And some text, isolated here because bindoc is overkill.
-func docOptUsageText() string {
-	return `fmd - Frosted Markdown tool.
+var DocOptUsageText = `fmd - Frosted Markdown tool.
 
     *** WARNING: ALPHA SOFTWARE! API MAY CHANGE AT ANY TIME! ***
 
@@ -210,4 +203,3 @@ Acknowledgements:
 For the full license text, use the --license option.
 
 `
-}

@@ -182,10 +182,26 @@ func (c *Cmd) PrintResult() error {
 		return nil
 	}
 
+	// If we only want the content, life is very simple.
+	if c.Options.ContentOnly {
+		fmt.Fprintln(c.Stdout, string(res.Content))
+		return nil
+	}
+
+	// With or without Content, the nature of the Meta means the encoder will
+	// need to use introspection (reflect).
+	var src interface{}
 	if c.Options.Format == "yaml" {
-		// Bit of a hack here, of course, but I think it works:
-		yres := CmdYamlRes{Meta: res.Meta, Content: string(res.Content)}
-		yaml, err := yaml.Marshal(yres)
+
+		if c.Options.MetaOnly {
+			src = res.Meta
+		} else {
+			src = map[string]interface{}{
+				"meta":    res.Meta,
+				"content": string(res.Content),
+			}
+		}
+		yaml, err := yaml.Marshal(src)
 		if err != nil {
 			return CmdError{
 				Code: CMD_SERIALIZATION_ERROR,
@@ -194,43 +210,38 @@ func (c *Cmd) PrintResult() error {
 			}
 		}
 		fmt.Fprintln(c.Stdout, string(yaml))
-	} else {
-		// JSON has additional options.
-		var src interface{}
-		if c.Options.NoBase64 {
-			// Only []byte values are Base64-encoded, strings are not.
-			src = map[string]interface{}{
-				"meta":    res.Meta,
-				"content": string(res.Content),
-			}
-		} else {
-			// Nb: this is exactly the kind of shit I'm not supposed to get
-			// away with in a "strongly-typed language."
-			src = res
-		}
-		var jsonBytes []byte
-		var err error
-		if c.Options.Indent {
-			jsonBytes, err = json.MarshalIndent(src, "", "    ")
-			if err != nil {
-				return CmdError{
-					Code: CMD_SERIALIZATION_ERROR,
-					Err:  err,
-					File: c.Options.File,
-				}
-			}
-		} else {
-			jsonBytes, err = json.Marshal(src)
-			if err != nil {
-				return CmdError{
-					Code: CMD_SERIALIZATION_ERROR,
-					Err:  err,
-					File: c.Options.File,
-				}
-			}
-		}
-		fmt.Fprintln(c.Stdout, string(jsonBytes))
+		return nil
 	}
+
+	// JSON, the default,  has additional options.
+	if c.Options.MetaOnly {
+		src = res.Meta
+	} else if c.Options.NoBase64 {
+		// Only []byte values are Base64-encoded, strings are not.
+		src = map[string]interface{}{
+			"meta":    res.Meta,
+			"content": string(res.Content),
+		}
+	} else {
+		src = res
+	}
+	var jsonBytes []byte
+	var err error
+	if c.Options.Indent {
+		jsonBytes, err = json.MarshalIndent(src, "", "    ")
+	} else {
+		jsonBytes, err = json.Marshal(src)
+
+	}
+	if err != nil {
+		return CmdError{
+			Code: CMD_SERIALIZATION_ERROR,
+			Err:  err,
+			File: c.Options.File,
+		}
+	}
+
+	fmt.Fprintln(c.Stdout, string(jsonBytes))
 
 	return nil
 }

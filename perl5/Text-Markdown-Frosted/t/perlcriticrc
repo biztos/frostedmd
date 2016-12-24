@@ -1,4 +1,0 @@
-# perlcriticrc for Frosted Markdown author tests
-severity  = 1 # brutal
-verbose   = 4
-theme     = core

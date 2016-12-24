@@ -19,7 +19,7 @@ import (
 	"github.com/biztos/frostedmd"
 )
 
-var STD_USAGE = `TESTING Cmd
+var StandardUsage = `TESTING Cmd
 
 Usage:
   fmd [options] FILE
@@ -244,7 +244,7 @@ func Test_SetOptions_Maximalist(t *testing.T) {
 		"somefile",
 	}
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", STD_USAGE)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
 	err := cmd.SetOptions()
 	assert.Nil(err, "no error on minimalist SetOptions")
 
@@ -274,7 +274,7 @@ func Test_SetOptions_OutputContadiction(t *testing.T) {
 		"somefile",
 	}
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", STD_USAGE)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
 	err := cmd.SetOptions()
 	if assert.Error(err, "error set") {
 		assert.Equal("--meta and --content are mutually exclusive.",
@@ -295,7 +295,7 @@ func Test_SetOptions_LicenseOption(t *testing.T) {
 
 	os.Args = []string{"testing", "--license"}
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", STD_USAGE)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
@@ -343,5 +343,166 @@ func Test_SetOptions_BadUsageForBools(t *testing.T) {
 		f := func() { cmd.SetOptions() }
 		testig.AssertPanicsWith(t, f, exp, "panics as expected for "+key)
 	}
+
+}
+
+func Test_PrintResult_NoResult(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult for nil Result")
+	assert.Equal("", rec.StdoutString(),
+		"no standard output on PrintResult for nil Result")
+	assert.Equal("", rec.StderrString(),
+		"no standard error on PrintResult for nil Result")
+}
+
+func Test_PrintResult_JSON(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+	exp := `{"meta":{"foo":123},"content":"aGVyZSBiZSBjb250ZW50"}
+`
+	cmd.Options = &frostedmd.CmdOptions{} // json is the default
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal(exp, rec.StdoutString(), "json on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_JSON_NoBase64(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+
+	// Hmm, is the field order deterministic, and thus alphabetic except for
+	// byte slices that are presumed long?  Could be... would be a nice trick,
+	// but what if it's just randomness here?
+	exp := `{"content":"here be content","meta":{"foo":123}}
+`
+	cmd.Options = &frostedmd.CmdOptions{NoBase64: true} // json is the default
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal(exp, rec.StdoutString(), "json on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_JSON_Indent(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+	exp := `{
+    "meta": {
+        "foo": 123
+    },
+    "content": "aGVyZSBiZSBjb250ZW50"
+}
+`
+	cmd.Options = &frostedmd.CmdOptions{Indent: true} // json is the default
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal(exp, rec.StdoutString(), "json on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_ContentOnly(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{ContentOnly: true}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal("here be content\n", rec.StdoutString(), "content on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_MetaOnly_JSON(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{MetaOnly: true}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal("{\"foo\":123}\n", rec.StdoutString(), "meta on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_MetaOnly_YAML(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{MetaOnly: true, Format: "yaml"}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal("foo: 123\n\n", rec.StdoutString(), "meta on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
 
 }

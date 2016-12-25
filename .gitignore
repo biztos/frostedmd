@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 /fmd
 /cover.out
+/coverage.out

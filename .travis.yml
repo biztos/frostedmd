@@ -1,0 +1,15 @@
+language: go
+go:
+- 1.5
+- tip
+install:
+- go get github.com/russross/blackfriday
+- go get gopkg.in/yaml.v2
+- go get github.com/docopt/docopt-go
+- go get github.com/stretchr/testify/assert
+- go get github.com/mattn/goveralls
+script:
+- go test -v ./... && go test -v -covermode=count -coverprofile=coverage.out
+- $(go env GOPATH | awk 'BEGIN{FS=":"} {print $1}')/bin/goveralls -coverprofile=coverage.out
+  -service=travis-ci -repotoken=$COVERALLS_TOKEN
+secure: "Yt4rt4hikFKGPNCEfpqIc2Ex7Sdu1vqmrMBkwt8cwjKUBiQ43om9wJ68EfF8Zkqx/kJQkUINJDa1MwfQCpzmX9n9NeOa9Eo6BK4+c50qnWyKEXhmhqoCJbyV6nZNHC6XcSOvVDWbE3RDh8qdIS4ayMxBuow4SsTCmz9lSkoIaQRRouyqo2HE8+8+RxQWBOIy8Y8zxFb3peaHcELaaWCT5D8O38v3dzOkwvGNEo3zMIyrmpvurBpVnoEec/DCLMz0qhoDf22xLfzzWlkSb5NJTDwzxaOkPnRje+mcwG52wLAfjEZVJjzn0UogQJAsSVE5QI/RwUL+XM66zDmpZ2oZpM6odnmqyAJ39WFbE7wm44r2TFaBgRqp8dcJMKWZjiFakxtgLvMwFhEoCRSZaFCLKEzLf6JmnxNyuWffFf8IBWMj39I/Ggq9A56DY7mjGZq+a5WX35fvYTBsEaCjajD6DhkekKPir0D76DOPZon0cvi2esZp/+HiYXzGPSMFWcF0uaP+T+ASdZU2R4TlxiAG2Hu5z7O4mKPhryofa75NxGsIeMvNP+ZE3Q7VrH9YREEfqCRuQXy6fdeG2HhaDXVVWrLJ4l1nOHvpZCAXlEsnK70DxdnYF/1VvxFZ8B5Zx+qpPD4hz/l9E6zUXGcyemqIUwYmr+UafiVFiJ37SuQ8U0I="

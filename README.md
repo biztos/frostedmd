@@ -155,3 +155,5 @@ which have their own licenses:
 * Uniform error handling, e.g. for parse failures in unknown meta blocks.
 * Also sane handling of potentially innocent errors.
 * Disable title guessing if not already possible (as an option).
+* Vendor-in deps, once I grok how that works with Travis et al.
+

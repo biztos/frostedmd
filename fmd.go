@@ -21,9 +21,9 @@
 // YAML processing is handled with the nearly canonical YAML package from
 // Canonical: https://godoc.org/gopkg.in/yaml.v2
 //
-// The Meta Block position can be reversed globally by setting META_AT_END to
-// true, or at the Parser level.  In reversed order the meta code block must
-// be the last element in the Markdown source.
+// The Meta Block position can be reversed globally by setting MetaBlockAtEnd
+// to true, or at the Parser level.  In reversed order the meta code block
+// must be the last element in the Markdown source.
 //
 // If the Meta contains no Title (nor "title" nor "TITLE") then the first
 // heading is used, if and only if that heading was not preceded by any
@@ -47,7 +47,7 @@ import (
 )
 
 // If true, get meta block from end of the Markdown source by default.
-var META_AT_END = false
+var MetaBlockAtEnd = false
 
 // The "Common" set of Blackfriday extensions; highly recommended for
 // productive use of Markdown.
@@ -81,7 +81,7 @@ type Parser struct {
 // New returns a new Parser with the common flags and extensions enabled.
 func New() *Parser {
 	return &Parser{
-		MetaAtEnd:          META_AT_END,
+		MetaAtEnd:          MetaBlockAtEnd,
 		MarkdownExtensions: COMMON_EXTENSIONS,
 		HtmlFlags:          COMMON_HTML_FLAGS,
 	}

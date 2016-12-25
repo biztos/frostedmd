@@ -66,7 +66,7 @@ so we can read our nice summary using the *head* command.
 
 	// Order within a map is random in Go, so let's make it explicit.
 	fmt.Println("Data sets:")
-	if ds, ok := mm["datasets"].(map[interface{}]interface{}); ok {
+	if ds, ok := mm["datasets"].(map[string]interface{}); ok {
 		fmt.Println("  numbers:", ds["numbers"])
 		fmt.Println("  letters:", ds["letters"])
 	} else {

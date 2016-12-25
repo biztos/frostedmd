@@ -41,15 +41,13 @@ func Test_Parse_SimpleJSON_NoLang(t *testing.T) {
 	input := `
 # Ima Title
 
-    {
-        "OldSchool": "YAML"
-    }
+    { "OldSchool": "JSON" }
 
 Plus "this."`
 
 	expMap := map[string]interface{}{
 		"Title":     "Ima Title",
-		"OldSchool": "YAML",
+		"OldSchool": "JSON",
 	}
 	expContent := "<h1>Ima Title</h1>\n\n<p>Plus &ldquo;this.&rdquo;</p>\n"
 
@@ -117,6 +115,24 @@ func Test_Parse_Error_JSON(t *testing.T) {
 
 	if assert.Error(err, "error returned") {
 		assert.Regexp("invalid character 'f'", err.Error(), "error useful")
+	}
+	assert.Nil(res.Meta, "empty meta map")
+	assert.Equal(expContent, string(res.Content), "content as expected")
+}
+
+func Test_Parse_Error_UnsupportedLanguage(t *testing.T) {
+
+	assert := assert.New(t)
+
+	input := "# Here\n\n```ruby\n{ foo: \"bar }\n```\n\nThere."
+
+	expContent := "<h1>Here</h1>\n\n<p>There.</p>\n"
+
+	res, err := frostedmd.New().Parse([]byte(input))
+
+	if assert.Error(err, "error returned") {
+		assert.Regexp("Unsupported language for meta block: ruby",
+			err.Error(), "error useful")
 	}
 	assert.Nil(res.Meta, "empty meta map")
 	assert.Equal(expContent, string(res.Content), "content as expected")

@@ -138,16 +138,17 @@ func (p *Parser) parseMeta(input []byte, lang string) (map[string]interface{}, e
 		return mm, nil
 	}
 
-	// Right now we only support JSON and YAML, so it's pretty easy to choose.
+	// Only JSON and YAML are supported for undefined-language code blocks,
+	// though we should keep in mind that it's possible the Markdown parser
+	// might try at some point to guess.
 	if lang == "" {
 		// We expect the JSON decoder to bail out fast on bad formats, so:
-		if err := json.Unmarshal(input, mm); err == nil {
+		if err := json.Unmarshal(input, &mm); err == nil {
 			return mm, nil
 		}
 		lang = "yaml"
 	}
 
-	// Guess the language if possible.
 	switch lang {
 	case "json":
 		err := json.Unmarshal(input, &mm)

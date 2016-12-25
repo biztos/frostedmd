@@ -146,6 +146,7 @@ which have their own licenses:
 
 ## TODO
 
+* Add footnotes to the default extension set.
 * More documentation for the long-suffering laity.
 * Better test coverage (and arguably better tests).  100% at minimum!
 * LOTS more edge cases etc.

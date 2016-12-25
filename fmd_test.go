@@ -3,9 +3,10 @@
 package frostedmd_test
 
 import (
+	"testing"
+
 	"github.com/biztos/frostedmd"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_Parse_SimpleYAML_NoLang(t *testing.T) {

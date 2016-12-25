@@ -98,10 +98,10 @@ type ParseResult struct {
 	Content []byte                 `json:"content"`
 }
 
-// Parse converts Markdown input into a meta map and HTML content fragment,
-// thus implementing the page.Parser interface. If an error is encountered
-// while parsing the meta block, the rendered content is still returned.
-// Thus the caller may choose to handle meta errors without interrupting flow.
+// Parse converts Markdown input into a meta map and HTML content fragment.
+// If an error is encountered while parsing the meta block, the rendered
+// content is still returned. Thus the caller may choose to handle meta
+// errors without interrupting flow.
 func (p *Parser) Parse(input []byte) (*ParseResult, error) {
 
 	// cf. renderer.go for the fmdRenderer definition

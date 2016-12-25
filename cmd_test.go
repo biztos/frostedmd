@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	// Third-party:
@@ -346,6 +347,70 @@ func Test_SetOptions_BadUsageForBools(t *testing.T) {
 
 }
 
+func Test_ParseFile_FileError(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Options = &frostedmd.CmdOptions{File: "no-such-file-here"}
+	err := cmd.ParseFile()
+	if assert.Error(err) {
+		assert.Equal(
+			"no-such-file-here: open no-such-file-here: "+
+				"no such file or directory",
+			err.Error(), "error as expected")
+		if assert.IsType(frostedmd.CmdError{}, err, "error has our type") {
+			e, _ := err.(frostedmd.CmdError)
+			assert.Equal(frostedmd.CMD_FILE_ERROR, e.Code,
+				"error has file error exit code")
+
+		}
+	}
+}
+
+func Test_ParseFile_ParseError(t *testing.T) {
+
+	assert := assert.New(t)
+
+	file := filepath.Join("test", "broken.md")
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Options = &frostedmd.CmdOptions{File: file}
+	err := cmd.ParseFile()
+	if assert.Error(err) {
+		assert.Regexp("^test.*broken.*yaml", err.Error(), "error as expected")
+		if assert.IsType(frostedmd.CmdError{}, err, "error has our type") {
+			e, _ := err.(frostedmd.CmdError)
+			assert.Equal(frostedmd.CMD_PARSE_ERROR, e.Code,
+				"error has parse error exit code")
+
+		}
+	}
+}
+
+func Test_ParseFile_Success(t *testing.T) {
+
+	assert := assert.New(t)
+
+	file := filepath.Join("test", "simple.md")
+	expMeta := map[string]interface{}{
+		"Title":       "FMD FTW",
+		"Description": "Simple is as simple does.",
+		"Tags":        []interface{}{"fmd", "golang", "nerdery"},
+	}
+	expContent := "<h1>Simple FMD</h1>\n\n<p>Good enough for me.</p>\n"
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Options = &frostedmd.CmdOptions{File: file}
+	err := cmd.ParseFile()
+	if assert.Nil(err, "no error from ParseFile") {
+		if assert.NotNil(cmd.Result, "Result was set") {
+			assert.Equal(expMeta, cmd.Result.Meta, "Result Meta as expected")
+			assert.Equal(expContent, string(cmd.Result.Content),
+				"Result Content as expected")
+		}
+	}
+}
+
 func Test_PrintResult_NoResult(t *testing.T) {
 
 	assert := assert.New(t)
@@ -361,6 +426,24 @@ func Test_PrintResult_NoResult(t *testing.T) {
 		"no standard output on PrintResult for nil Result")
 	assert.Equal("", rec.StderrString(),
 		"no standard error on PrintResult for nil Result")
+}
+
+func Test_PrintResult_TestMode(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Options = &frostedmd.CmdOptions{Test: true}
+	cmd.Result = &frostedmd.ParseResult{Content: []byte("anything")}
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult for Test option")
+	assert.Equal("", rec.StdoutString(),
+		"no standard output on PrintResult for Test option")
+	assert.Equal("", rec.StderrString(),
+		"no standard error on PrintResult Test option")
 }
 
 func Test_PrintResult_JSON(t *testing.T) {
@@ -503,6 +586,157 @@ func Test_PrintResult_MetaOnly_YAML(t *testing.T) {
 	err := cmd.PrintResult()
 	assert.Nil(err, "no error on PrintResult")
 	assert.Equal("foo: 123\n\n", rec.StdoutString(), "meta on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_YAML(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123},
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{Format: "yaml"}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	exp := `content: here be content
+meta:
+  foo: 123
+
+`
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal(exp, rec.StdoutString(), "yaml on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_ErrorSerializingJSON(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": func() {}},
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	if assert.Error(err, "error on PrintResult") {
+		if assert.IsType(frostedmd.CmdError{}, err) {
+			assert.Equal("json: unsupported type: func()", err.Error(),
+				"error string as expected")
+			e, _ := err.(frostedmd.CmdError)
+			assert.Equal(frostedmd.CMD_SERIALIZATION_ERROR, e.Code,
+				"error code is 'serialization'")
+		}
+	}
+	assert.Equal("", rec.StdoutString(), "no standard output")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_ErrorSerializingYAML(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": func() {}},
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{Format: "yaml"}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	if assert.Error(err, "error on PrintResult") {
+		if assert.IsType(frostedmd.CmdError{}, err) {
+			assert.Equal("yaml error: cannot marshal type: func()",
+				err.Error(), "error string as expected")
+			e, _ := err.(frostedmd.CmdError)
+			assert.Equal(frostedmd.CMD_SERIALIZATION_ERROR, e.Code,
+				"error code is 'serialization'")
+		}
+	}
+	assert.Equal("", rec.StdoutString(), "no standard output")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_Run_SetOptionsError(t *testing.T) {
+
+	assert := assert.New(t)
+
+	os.Args = []string{"test", "-j", "-y", "FILE"} // contradictory options
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	err := cmd.Run()
+	if assert.Error(err, "error on Run") {
+
+	}
+	if assert.IsType(frostedmd.CmdError{}, err) {
+		e, _ := err.(frostedmd.CmdError)
+		assert.Equal(frostedmd.CMD_OPTIONS_ERROR, e.Code,
+			"error code is 'options'")
+	}
+
+}
+
+func Test_Run_ParseFileError(t *testing.T) {
+
+	assert := assert.New(t)
+
+	os.Args = []string{"test", "no-such-file-here"} // contradictory options
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	err := cmd.Run()
+	if assert.Error(err, "error on Run") {
+		if assert.IsType(frostedmd.CmdError{}, err) {
+			e, _ := err.(frostedmd.CmdError)
+			assert.Equal(frostedmd.CMD_FILE_ERROR, e.Code,
+				"error code is 'file'")
+		}
+	}
+
+}
+
+func Test_Run_Success(t *testing.T) {
+
+	assert := assert.New(t)
+
+	os.Args = []string{"test", "-i", filepath.Join("test", "simple.md")}
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+	exp := `{
+    "meta": {
+        "Description": "Simple is as simple does.",
+        "Tags": [
+            "fmd",
+            "golang",
+            "nerdery"
+        ],
+        "Title": "FMD FTW"
+    },
+    "content": "PGgxPlNpbXBsZSBGTUQ8L2gxPgoKPHA+R29vZCBlbm91Z2ggZm9yIG1lLjwvcD4K"
+}
+`
+
+	err := cmd.Run()
+	assert.Nil(err, "no error on Run")
+	assert.Equal(exp, rec.StdoutString(), "json on stdout")
 	assert.Equal("", rec.StderrString(), "no standard error")
 
 }

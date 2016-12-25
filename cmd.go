@@ -100,10 +100,7 @@ func (c *Cmd) Run() error {
 	if err := c.ParseFile(); err != nil {
 		return err
 	}
-	if err := c.PrintResult(); err != nil {
-		return err
-	}
-	return nil
+	return c.PrintResult()
 }
 
 // Fail fails with a useful message based on err; if err is a CmdError
@@ -163,10 +160,6 @@ func (c *Cmd) ParseFile() error {
 		}
 	}
 
-	if c.Options.Test {
-		c.Result = nil
-	}
-
 	return nil
 
 }
@@ -178,7 +171,7 @@ func (c *Cmd) ParseFile() error {
 func (c *Cmd) PrintResult() error {
 
 	res := c.Result
-	if res == nil {
+	if res == nil || c.Options.Test {
 		return nil
 	}
 
@@ -201,7 +194,7 @@ func (c *Cmd) PrintResult() error {
 				"content": string(res.Content),
 			}
 		}
-		yaml, err := yaml.Marshal(src)
+		yaml, err := safeMarshalYaml(src)
 		if err != nil {
 			return CmdError{
 				Code: CMD_SERIALIZATION_ERROR,
@@ -244,6 +237,28 @@ func (c *Cmd) PrintResult() error {
 	fmt.Fprintln(c.Stdout, string(jsonBytes))
 
 	return nil
+}
+
+// NOTES:
+// 1. This appears to be the idiomatic way to trap a panic in an external
+//    package while still returning sane values.  If not, please let me know!
+// 2. This is only necessary because the yaml package panics where it should
+//    return an error.  TODO: fix there, and send a pull request.
+func safeMarshalYaml(input interface{}) ([]byte, error) {
+
+	var output []byte
+	var err error
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("yaml error: %s", r)
+			}
+		}()
+		output, err = yaml.Marshal(input)
+	}()
+
+	return output, err
+
 }
 
 // SetOptions sets the Options struct according to the Usage. If a --license

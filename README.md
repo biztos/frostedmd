@@ -1,5 +1,14 @@
 # Frosted Markdown
 
+[![GoDoc][b1]][doc] [![Build Status][b2]][ci] [![Coverage Status][b3]][cov]
+
+[b1]: https://godoc.org/github.com/biztos/frostedmd?status.svg
+[doc]: https://godoc.org/github.com/biztos/frostedmd
+[b2]: https://travis-ci.org/biztos/frostedmd.svg?branch=master
+[ci]: https://travis-ci.org/biztos/frostedmd
+[b3]: https://coveralls.io/repos/github/biztos/frostedmd/badge.svg
+[cov]: https://coveralls.io/github/biztos/frostedmd
+
 **WARNING: this is alpha software and should be considered unstable.**
 
 In other words, a work in progress.  Like most other software.

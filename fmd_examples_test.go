@@ -11,6 +11,10 @@ import (
 
 func Example() {
 
+	// NOTE: due to a godoc bug, the following text may not appear correctly.
+	// The "# Meta" line and the "Tags" line are both indented (four spaces).
+	// https://github.com/golang/go/issues/18446
+
 	// The easiest way to get things done:
 	input := `# My Markdown
 

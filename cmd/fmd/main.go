@@ -47,13 +47,13 @@
 //    (It would be nice to be able to tell FOR SURE what the parsed
 //    interface{} is, so e.g. timestamps can be debugged. Any other use-case?)
 //
+//  * Take STDIN if no file specified (should be useful in editors).
+//
 //  * Option to lowercase all tags in the JSON and/or YAML (how hard is this?)
 //
 //  * Options to fine-tune the parser behavior (maybe -x FooOption?)
 //
 //  * -b option to use MarkdownBasic (few/no extensions)
-//
-//  * -p option to only convert to HTML
 //
 //  * -d option to produce a full HTML document
 //
@@ -119,7 +119,8 @@ Options:
   -i, --indent      Indent output if applicable.
   -n, --nobase64    Do not Base64-encode the JSON 'content' property.
   -c, --content     Only print the content (as a string), not the meta.
-  -m, --meta        Exclude the content from the meta block.
+  -m, --meta        Only print the meta block, not the content.
+  -p, --plainmd     Convert as "plain" Markdown (not Frosted Markdown).
   -f, --force       Do not abort on errors (log them to STDERR).
   -s, --silent      Do not print error messages.
   -t, --test        Parse file but do not print any output on success.

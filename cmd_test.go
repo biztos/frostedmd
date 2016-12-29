@@ -36,7 +36,8 @@ Options:
   -i, --indent      Indent output if applicable.
   -n, --nobase64    Do not Base64-encode the JSON 'content' property.
   -c, --content     Only print the content (as a string), not the meta.
-  -m, --meta        Exclude the content from the meta block.
+  -m, --meta        Only print the meta block, not the content.
+  -p, --plainmd     Convert as "plain" Markdown (not Frosted Markdown).
   -f, --force       Do not abort on errors (log them to STDERR).
   -s, --silent      Do not print error messages.
   -t, --test        Parse file but do not print any output on success.
@@ -411,6 +412,33 @@ func Test_ParseFile_Success(t *testing.T) {
 	}
 }
 
+func Test_ParseFile_Success_PlainMarkdown(t *testing.T) {
+
+	assert := assert.New(t)
+
+	file := filepath.Join("test", "simple.md")
+	expContent := `<h1>Simple FMD</h1>
+
+<pre><code>Title: FMD FTW
+Description: Simple is as simple does.
+Tags: [fmd, golang, nerdery]
+</code></pre>
+
+<p>Good enough for me.</p>
+`
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Options = &frostedmd.CmdOptions{File: file, PlainMarkdown: true}
+	err := cmd.ParseFile()
+	if assert.Nil(err, "no error from ParseFile") {
+		if assert.NotNil(cmd.Result, "Result was set") {
+			assert.Nil(cmd.Result.Meta, "Result Meta is nil")
+			assert.Equal(expContent, string(cmd.Result.Content),
+				"Result Content as expected")
+		}
+	}
+}
+
 func Test_PrintResult_NoResult(t *testing.T) {
 
 	assert := assert.New(t)
@@ -613,6 +641,28 @@ meta:
 	err := cmd.PrintResult()
 	assert.Nil(err, "no error on PrintResult")
 	assert.Equal(exp, rec.StdoutString(), "yaml on stdout")
+	assert.Equal("", rec.StderrString(), "no standard error")
+
+}
+
+func Test_PrintResult_PlainMarkdown(t *testing.T) {
+
+	assert := assert.New(t)
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Result = &frostedmd.ParseResult{
+		Meta:    map[string]interface{}{"foo": 123}, // anything; ignored!
+		Content: []byte("here be content"),
+	}
+
+	cmd.Options = &frostedmd.CmdOptions{PlainMarkdown: true}
+
+	rec := testig.NewOutputRecorder()
+	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+	err := cmd.PrintResult()
+	assert.Nil(err, "no error on PrintResult")
+	assert.Equal("here be content\n", rec.StdoutString(), "content on stdout")
 	assert.Equal("", rec.StderrString(), "no standard error")
 
 }

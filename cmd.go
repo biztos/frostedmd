@@ -14,6 +14,7 @@ import (
 
 	// Third-Party:
 	"github.com/docopt/docopt-go"
+	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,15 +31,16 @@ var DefaultExitFunction = os.Exit // override for testing main()
 // CmdOptions describes the options available to the command.  The standard
 // fmd command exposes all of them.
 type CmdOptions struct {
-	File        string
-	Format      string
-	Indent      bool
-	NoBase64    bool
-	ContentOnly bool
-	MetaOnly    bool
-	Force       bool
-	Silent      bool
-	Test        bool
+	File          string
+	Format        string
+	Indent        bool
+	NoBase64      bool
+	ContentOnly   bool
+	MetaOnly      bool
+	PlainMarkdown bool
+	Force         bool
+	Silent        bool
+	Test          bool
 }
 
 // CmdError defines an error in the command-running context.
@@ -147,6 +149,14 @@ func (c *Cmd) ParseFile() error {
 		}
 	}
 
+	// In some cases we skip the whole Frosted Markdown bag of tricks, thus
+	// allowing the use of the fmd tool as a generic converter (strongly
+	// favoring Blackfriday extensions of course).
+	if c.Options.PlainMarkdown {
+		c.Result = &ParseResult{Content: blackfriday.MarkdownCommon(b)}
+		return nil
+	}
+
 	// NOTE: we should get back a partial result even when we have an error.
 	res, err := MarkdownCommon(b)
 	c.Result = res // cf. the Force option
@@ -176,7 +186,7 @@ func (c *Cmd) PrintResult() error {
 	}
 
 	// If we only want the content, life is very simple.
-	if c.Options.ContentOnly {
+	if c.Options.ContentOnly || c.Options.PlainMarkdown {
 		fmt.Fprintln(c.Stdout, string(res.Content))
 		return nil
 	}

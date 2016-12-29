@@ -301,6 +301,7 @@ func (c *Cmd) SetOptions() error {
 		"--test",
 		"--content",
 		"--meta",
+		"--plainmd",
 		"--license",
 	}
 	have := map[string]bool{}
@@ -349,15 +350,16 @@ func (c *Cmd) SetOptions() error {
 	}
 
 	c.Options = &CmdOptions{
-		File:        file,
-		Format:      format,
-		Force:       have["--force"],
-		Silent:      have["--silent"],
-		Indent:      have["--indent"],
-		NoBase64:    have["--nobase64"],
-		Test:        have["--test"],
-		ContentOnly: have["--content"],
-		MetaOnly:    have["--meta"],
+		File:          file,
+		Format:        format,
+		Force:         have["--force"],
+		Silent:        have["--silent"],
+		Indent:        have["--indent"],
+		NoBase64:      have["--nobase64"],
+		Test:          have["--test"],
+		ContentOnly:   have["--content"],
+		MetaOnly:      have["--meta"],
+		PlainMarkdown: have["--plainmd"],
 	}
 
 	return nil

@@ -335,11 +335,22 @@ func (c *Cmd) SetOptions() error {
 		format = "yaml"
 	}
 
-	// Don't contradict what you want us to output.
+	// Catch any contradictory options.
 	if have["--meta"] && have["--content"] {
+		// Obviously can't output MetaOnly and ContentOnly.
 		return CmdError{
 			Err:  errors.New("--meta and --content are mutually exclusive."),
 			Code: CMD_OPTIONS_ERROR,
+		}
+	}
+	if have["--plainmd"] {
+		// PlainMarkdown overrides all other options at the moment.
+		// TODO: allow the "basic" option when we implement it.
+		if len(have) != 1 {
+			return CmdError{
+				Err:  errors.New("--plainmd excludes other options."),
+				Code: CMD_OPTIONS_ERROR,
+			}
 		}
 	}
 

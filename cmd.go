@@ -323,6 +323,12 @@ func (c *Cmd) SetOptions() error {
 	// will not leave a hole in the test coverage for that.
 	file, _ := args["FILE"].(string)
 
+	// Let's try to be upstanding OSS citizens here, just in principle.
+	if have["--license"] {
+		fmt.Fprintln(c.Stdout, LicenseFullText())
+		c.Exit(0)
+	}
+
 	// Only one output format please.
 	format := "json"
 	if have["--yaml"] {
@@ -346,18 +352,15 @@ func (c *Cmd) SetOptions() error {
 	if have["--plainmd"] {
 		// PlainMarkdown overrides all other options at the moment.
 		// TODO: allow the "basic" option when we implement it.
-		if len(have) != 1 {
-			return CmdError{
-				Err:  errors.New("--plainmd excludes other options."),
-				Code: CMD_OPTIONS_ERROR,
+		format = ""
+		for k, v := range have {
+			if k != "--plainmd" && v == true {
+				return CmdError{
+					Err:  errors.New("--plainmd excludes other options."),
+					Code: CMD_OPTIONS_ERROR,
+				}
 			}
 		}
-	}
-
-	// Let's try to be upstanding OSS citizens here, just in principle.
-	if have["--license"] {
-		fmt.Fprintln(c.Stdout, LicenseFullText())
-		c.Exit(0)
 	}
 
 	c.Options = &CmdOptions{

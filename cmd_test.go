@@ -326,6 +326,25 @@ func Test_SetOptions_ParseContadiction_PlainMarkdownExclusive(t *testing.T) {
 
 }
 
+func Test_SetOptions_PlainMarkdownOnly(t *testing.T) {
+
+	assert := assert.New(t)
+
+	os.Args = []string{
+		"testing",
+		"--plainmd",
+		"somefile",
+	}
+	exp := &frostedmd.CmdOptions{File: "somefile", PlainMarkdown: true}
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	err := cmd.SetOptions()
+	if assert.Nil(err, "no error") {
+		assert.Equal(exp, cmd.Options, "options set as expected")
+	} else {
+		t.Log(err.Error())
+	}
+}
+
 func Test_SetOptions_LicenseOption(t *testing.T) {
 
 	assert := assert.New(t)

@@ -39,32 +39,56 @@
 // Binaries for a number of platforms will be made available as soon as this
 // tool is a little more stable.
 //
-// TODO
+// ROADMAP
 //
-// Much work remains!
+// (prioritized as of 2016-12-30)
 //
-//  * MAYBE Other output formats?  For instance "go-quoted?"
-//    (It would be nice to be able to tell FOR SURE what the parsed
-//    interface{} is, so e.g. timestamps can be debugged. Any other use-case?)
+//  * Take STDIN if no file provided (this seems more natural than "-").
+//    (Needed for sane TextMate previews.)
 //
-//  * Take STDIN if no file specified (should be useful in editors).
-//
-//  * Option to lowercase all tags in the JSON and/or YAML (how hard is this?)
-//
-//  * Options to fine-tune the parser behavior (maybe -x FooOption?)
-//
-//  * -b option to use MarkdownBasic (few/no extensions)
-//
-//  * -d option to produce a full HTML document
+//  * -d option to produce a full HTML5 document in the Content.
 //
 //  * --style=X option to use an optional canned stylesheet *or* file
 //    (included in full) *or* link to stylesheet (if neither file nor
-//    canned style option)
+//    canned style option).  Possibly with different options; TBD.
 //
-//  * --template=X option to use html/template and a file... MAYBE.
+//  *** TAG VERSION: 0.9 -- READY FOR USE, PENDING BUGFIXES ***
+//
+//  * -e option for meta-at-end
+//
+//  * A set of e2e tests using Run() for all the arg possiblities...
+//    Probably keep expected input/output in files for easier diffing...
+//    Consider testing this via testig: dir,infile,expfile,func.
+//
+//  *** TAG VERSION: 1.0 -- READY FOR PUBLIC USE PROPER-LIKE! ***
+//
+//  * MAYBE -b option to use MarkdownBasic (few/no extensions)
+//    PRO: lets you skip extensions and sanity-check vs. dumber parsers.
+//    CON: why bother?  is that even a use case?  vs. setting/unsetting flags?
+//
+//  * Option to lowercase all tags in the JSON and/or YAML (how hard is this?)
+//    Use reflection, create a new interface in which all the string keys are
+//    lowercased?  This also seems like a generically useful case, if at all
+//    useful, so maybe it goes in utli?
+//
+//  * Options to fine-tune the parser behavior via the ext/flage e.g.
+//    blackfriday.EXTENSION_* and blackfriday.HTML_* -- so with on/off
+//    switches like -o/--option=FOOBAR, -O/--nooption=FOOBAR.
+//    However: should there be a reset flag for this stuff?  Because you'd
+//    mostly want to do add things but might want to specify "basic plus"
+//    (Nasty bit: need to then also have --list-options or something.)
+//
+//  * MAYBE Other output formats?  For instance "go-quoted?"
+//    It would be nice to be able to tell FOR SURE what the parsed interface{}
+//    is, so e.g. timestamps can be debugged. Any other use-case?
+//    Any other formats? Asciidoc? (Probably a lot of work.)
+//
+//  * MAYBE --template=X option to use html/template and a file... MAYBE.
 //    Is this really useful for anything?  Wouldn't you need a bunch of
-//    template files? The tool is already at 3.4M, which is a little
+//    template files? The tool is already at >3M, which is a little
 //    crazy, and adding template support would be at least another 1.1M.
+//    However, templates are a nice way to implement the -d option so
+//    it may be a moot point by the time we get here.
 package main
 
 import (

@@ -24,6 +24,8 @@
 //        "content": "< Base64-Encoded String >"
 //    }
 //
+// If no file is specified, a Markdown document is read from standard input.
+//
 // For more information simply invoke the program's help option:
 //
 //    fmd --help
@@ -42,9 +44,6 @@
 // ROADMAP
 //
 // (prioritized as of 2016-12-30)
-//
-//  * Take STDIN if no file provided (this seems more natural than "-").
-//    (Needed for sane TextMate previews.)
 //
 //  * -d option to produce a full HTML5 document in the Content.
 //
@@ -113,7 +112,8 @@ var DocOptUsageText = `fmd - Frosted Markdown tool.
     *** WARNING: ALPHA SOFTWARE! API MAY CHANGE AT ANY TIME! ***
 
 Converts Frosted Markdown files into structured data containing two top-level
-properties: 'meta' and 'content' -- the latter being the parsed HTML.
+properties: 'meta' and 'content' -- the latter being the parsed HTML.  If no
+file is specified, the Markdown document is read from standard input.
 
 Note that in JSON output the HTML content is base64-encoded; this actually
 saves significant space in the JSON file for any nontrivial amount of content.
@@ -130,7 +130,7 @@ More information on Frosted Markdown is available here:
 https://github.com/biztos/frostedmd
 
 Usage:
-  fmd [options] FILE
+  fmd [options] [FILE]
   fmd --version
   fmd --license
   fmd -h | --help

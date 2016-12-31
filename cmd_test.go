@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	// Third-party:
@@ -23,7 +24,7 @@ import (
 var StandardUsage = `TESTING Cmd
 
 Usage:
-  fmd [options] FILE
+  fmd [options] [FILE]
   fmd --version
   fmd --license
   fmd -h | --help
@@ -487,6 +488,37 @@ Tags: [fmd, golang, nerdery]
 	if assert.Nil(err, "no error from ParseFile") {
 		if assert.NotNil(cmd.Result, "Result was set") {
 			assert.Nil(cmd.Result.Meta, "Result Meta is nil")
+			assert.Equal(expContent, string(cmd.Result.Content),
+				"Result Content as expected")
+		}
+	}
+}
+
+func Test_ParseFile_Stdin(t *testing.T) {
+
+	assert := assert.New(t)
+
+	input := `# I am markdown!
+
+    # Meta
+    Title: Ahoj!
+    Tags: [fee,fi,fo]
+
+Here we are.
+`
+	expMeta := map[string]interface{}{
+		"Title": "Ahoj!",
+		"Tags":  []interface{}{"fee", "fi", "fo"},
+	}
+	expContent := "<h1>I am markdown!</h1>\n\n<p>Here we are.</p>\n"
+
+	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd.Stdin = strings.NewReader(input)
+	cmd.Options = &frostedmd.CmdOptions{} // nb: no File!
+	err := cmd.ParseFile()
+	if assert.Nil(err, "no error from ParseFile") {
+		if assert.NotNil(cmd.Result, "Result was set") {
+			assert.Equal(expMeta, cmd.Result.Meta, "Result Meta as expected")
 			assert.Equal(expContent, string(cmd.Result.Content),
 				"Result Content as expected")
 		}

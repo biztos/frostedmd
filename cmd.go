@@ -73,6 +73,7 @@ type Cmd struct {
 	// In order to make testing realistically possible in the command context
 	// we make these standard things overrideable:
 	Exit   func(int)
+	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
 }
@@ -86,6 +87,7 @@ func NewCmd(name, version, usage string) *Cmd {
 		Version: version,
 		Usage:   usage,
 		Exit:    DefaultExitFunction,
+		Stdin:   os.Stdin,
 		Stdout:  os.Stdout,
 		Stderr:  os.Stderr,
 	}
@@ -138,9 +140,17 @@ type CmdYamlRes struct {
 
 // ParseFile parses a single file contained in the Options, according to the
 // other options therein, and returning any error.  Note that a useful result
-// *may* be returned together with an error.
+// *may* be returned together with an error.  If the Options.File is the
+// empty string, input is read from the command's Stdin (os.Stdin by default).
 func (c *Cmd) ParseFile() error {
-	b, err := ioutil.ReadFile(c.Options.File)
+
+	var input []byte
+	var err error
+	if c.Options.File == "" {
+		input, err = ioutil.ReadAll(c.Stdin)
+	} else {
+		input, err = ioutil.ReadFile(c.Options.File)
+	}
 	if err != nil {
 		return CmdError{
 			Code: CMD_FILE_ERROR,
@@ -153,12 +163,12 @@ func (c *Cmd) ParseFile() error {
 	// allowing the use of the fmd tool as a generic converter (strongly
 	// favoring Blackfriday extensions of course).
 	if c.Options.PlainMarkdown {
-		c.Result = &ParseResult{Content: blackfriday.MarkdownCommon(b)}
+		c.Result = &ParseResult{Content: blackfriday.MarkdownCommon(input)}
 		return nil
 	}
 
 	// NOTE: we should get back a partial result even when we have an error.
-	res, err := MarkdownCommon(b)
+	res, err := MarkdownCommon(input)
 	c.Result = res // cf. the Force option
 	if err != nil {
 		return CmdError{

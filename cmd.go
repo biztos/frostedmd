@@ -26,7 +26,34 @@ const (
 	CMD_OTHER_ERROR         = 99
 )
 
-var DefaultExitFunction = os.Exit // override for testing main()
+// Exit function; override for testing main()
+var DefaultExitFunction = os.Exit
+
+// Standard DocOpt specification covering all known options.  Additional
+// explanatory text is up to the caller of NewCmd.
+var CmdUsage = `
+
+Usage:
+  fmd [options] [FILE]
+  fmd --version
+  fmd --license
+  fmd -h | --help
+
+Options:
+  -v, --version     Show version.
+  -h, --help        Show this screen.
+  -j, --json        Write output in JSON format (default).
+  -y, --yaml        Write output in YAML format.
+  -i, --indent      Indent output if applicable.
+  -n, --nobase64    Do not Base64-encode the JSON 'content' property.
+  -c, --content     Only print the content (as a string), not the meta.
+  -m, --meta        Only print the meta block, not the content.
+  -p, --plainmd     Convert as "plain" Markdown (not Frosted Markdown).
+  -f, --force       Do not abort on errors (log them to STDERR).
+  -s, --silent      Do not print error messages.
+  -t, --test        Parse file but do not print any output on success.
+  --license         Print the software license.
+`
 
 // CmdOptions describes the options available to the command.  The standard
 // fmd command exposes all of them.
@@ -241,7 +268,7 @@ func (c *Cmd) PrintResult() error {
 	var jsonBytes []byte
 	var err error
 	if c.Options.Indent {
-		jsonBytes, err = json.MarshalIndent(src, "", "    ")
+		jsonBytes, err = json.MarshalIndent(src, "", "  ")
 	} else {
 		jsonBytes, err = json.Marshal(src)
 

@@ -1,0 +1,10 @@
+content: |
+  <h1>I am simple.</h1>
+
+  <p>Truly simple.</p>
+meta:
+  Tags:
+  - foo
+  - bar
+  Title: I am simple.
+

@@ -45,6 +45,8 @@
 //
 // (prioritized as of 2016-12-30)
 //
+//  * Fix the goofy-ass escaping of non-base64 content in JSON.  What's up?
+//
 //  * -d option to produce a full HTML5 document in the Content.
 //
 //  * --style=X option to use an optional canned stylesheet *or* file
@@ -55,7 +57,7 @@
 //
 //  * -e option for meta-at-end
 //
-//  * A set of e2e tests using Run() for all the arg possiblities...
+//  * More e2e tests using Run() for all the arg possiblities...
 //    Probably keep expected input/output in files for easier diffing...
 //    Consider testing this via testig: dir,infile,expfile,func.
 //
@@ -98,7 +100,7 @@ const VERSION = "0.1.0"
 
 func main() {
 
-	cmd := frostedmd.NewCmd("fmd", VERSION, DocOptUsageText)
+	cmd := frostedmd.NewCmd("fmd", VERSION, usage())
 	if err := cmd.Run(); err != nil {
 		cmd.Fail(err)
 	} else {
@@ -107,9 +109,9 @@ func main() {
 
 }
 
-var DocOptUsageText = `fmd - Frosted Markdown tool.
+func usage() string {
 
-    *** WARNING: ALPHA SOFTWARE! API MAY CHANGE AT ANY TIME! ***
+	head := `fmd - Frosted Markdown tool.
 
 Converts Frosted Markdown files into structured data containing two top-level
 properties: 'meta' and 'content' -- the latter being the parsed HTML.  If no
@@ -129,28 +131,9 @@ More information on Frosted Markdown is available here:
 
 https://github.com/biztos/frostedmd
 
-Usage:
-  fmd [options] [FILE]
-  fmd --version
-  fmd --license
-  fmd -h | --help
+`
 
-Options:
-  -v, --version     Show version.
-  -h, --help        Show this screen.
-  -j, --json        Write output in JSON format (default).
-  -y, --yaml        Write output in YAML format.
-  -i, --indent      Indent output if applicable.
-  -n, --nobase64    Do not Base64-encode the JSON 'content' property.
-  -c, --content     Only print the content (as a string), not the meta.
-  -m, --meta        Only print the meta block, not the content.
-  -p, --plainmd     Convert as "plain" Markdown (not Frosted Markdown).
-  -f, --force       Do not abort on errors (log them to STDERR).
-  -s, --silent      Do not print error messages.
-  -t, --test        Parse file but do not print any output on success.
-  --license         Print the software license.
-
-Exit codes:
+	foot := `Exit codes:
 
   0: OK.
   1: Parse failure.
@@ -226,5 +209,7 @@ Acknowledgements:
 
 (c) 2016 Kevin A. Frost.  All rights reserved.  This is free software.
 For the full license text, use the --license option.
-
 `
+
+	return head + frostedmd.CmdUsage + foot
+}

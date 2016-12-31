@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,30 +21,6 @@ import (
 	// Under test:
 	"github.com/biztos/frostedmd"
 )
-
-var StandardUsage = `TESTING Cmd
-
-Usage:
-  fmd [options] [FILE]
-  fmd --version
-  fmd --license
-  fmd -h | --help
-
-Options:
-  -v, --version     Show version.
-  -h, --help        Show this screen.
-  -j, --json        Write output in JSON format (default).
-  -y, --yaml        Write output in YAML format.
-  -i, --indent      Indent output if applicable.
-  -n, --nobase64    Do not Base64-encode the JSON 'content' property.
-  -c, --content     Only print the content (as a string), not the meta.
-  -m, --meta        Only print the meta block, not the content.
-  -p, --plainmd     Convert as "plain" Markdown (not Frosted Markdown).
-  -f, --force       Do not abort on errors (log them to STDERR).
-  -s, --silent      Do not print error messages.
-  -t, --test        Parse file but do not print any output on success.
-  --license         Print the software license.
-`
 
 func Test_NewCmd(t *testing.T) {
 
@@ -247,7 +224,7 @@ func Test_SetOptions_Maximalist(t *testing.T) {
 		"somefile",
 	}
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	err := cmd.SetOptions()
 	assert.Nil(err, "no error on minimalist SetOptions")
 
@@ -277,7 +254,7 @@ func Test_SetOptions_OutputContadiction(t *testing.T) {
 		"somefile",
 	}
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	err := cmd.SetOptions()
 	if assert.Error(err, "error set") {
 		assert.Equal("--meta and --content are mutually exclusive.",
@@ -312,7 +289,7 @@ func Test_SetOptions_ParseContadiction_PlainMarkdownExclusive(t *testing.T) {
 			arg,
 			"somefile",
 		}
-		cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+		cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 		err := cmd.SetOptions()
 		if assert.Error(err, "error set") {
 			assert.Equal("--plainmd excludes other options.",
@@ -337,7 +314,7 @@ func Test_SetOptions_PlainMarkdownOnly(t *testing.T) {
 		"somefile",
 	}
 	exp := &frostedmd.CmdOptions{File: "somefile", PlainMarkdown: true}
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	err := cmd.SetOptions()
 	if assert.Nil(err, "no error") {
 		assert.Equal(exp, cmd.Options, "options set as expected")
@@ -352,7 +329,7 @@ func Test_SetOptions_LicenseOption(t *testing.T) {
 
 	os.Args = []string{"testing", "--license"}
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
@@ -407,7 +384,7 @@ func Test_ParseFile_FileError(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Options = &frostedmd.CmdOptions{File: "no-such-file-here"}
 	err := cmd.ParseFile()
 	if assert.Error(err) {
@@ -429,7 +406,7 @@ func Test_ParseFile_ParseError(t *testing.T) {
 	assert := assert.New(t)
 
 	file := filepath.Join("test", "broken.md")
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Options = &frostedmd.CmdOptions{File: file}
 	err := cmd.ParseFile()
 	if assert.Error(err) {
@@ -455,7 +432,7 @@ func Test_ParseFile_Success(t *testing.T) {
 	}
 	expContent := "<h1>Simple FMD</h1>\n\n<p>Good enough for me.</p>\n"
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Options = &frostedmd.CmdOptions{File: file}
 	err := cmd.ParseFile()
 	if assert.Nil(err, "no error from ParseFile") {
@@ -482,7 +459,7 @@ Tags: [fmd, golang, nerdery]
 <p>Good enough for me.</p>
 `
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Options = &frostedmd.CmdOptions{File: file, PlainMarkdown: true}
 	err := cmd.ParseFile()
 	if assert.Nil(err, "no error from ParseFile") {
@@ -512,7 +489,7 @@ Here we are.
 	}
 	expContent := "<h1>I am markdown!</h1>\n\n<p>Here we are.</p>\n"
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Stdin = strings.NewReader(input)
 	cmd.Options = &frostedmd.CmdOptions{} // nb: no File!
 	err := cmd.ParseFile()
@@ -529,7 +506,7 @@ func Test_PrintResult_NoResult(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 
 	rec := testig.NewOutputRecorder()
 	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
@@ -546,7 +523,7 @@ func Test_PrintResult_TestMode(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Options = &frostedmd.CmdOptions{Test: true}
 	cmd.Result = &frostedmd.ParseResult{Content: []byte("anything")}
 	rec := testig.NewOutputRecorder()
@@ -564,7 +541,7 @@ func Test_PrintResult_JSON(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
@@ -587,7 +564,7 @@ func Test_PrintResult_JSON_NoBase64(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
@@ -614,16 +591,16 @@ func Test_PrintResult_JSON_Indent(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
 	}
 	exp := `{
-    "meta": {
-        "foo": 123
-    },
-    "content": "aGVyZSBiZSBjb250ZW50"
+  "meta": {
+    "foo": 123
+  },
+  "content": "aGVyZSBiZSBjb250ZW50"
 }
 `
 	cmd.Options = &frostedmd.CmdOptions{Indent: true} // json is the default
@@ -642,7 +619,7 @@ func Test_PrintResult_ContentOnly(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
@@ -664,7 +641,7 @@ func Test_PrintResult_MetaOnly_JSON(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
@@ -686,7 +663,7 @@ func Test_PrintResult_MetaOnly_YAML(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
@@ -708,7 +685,7 @@ func Test_PrintResult_YAML(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123},
 		Content: []byte("here be content"),
@@ -735,7 +712,7 @@ func Test_PrintResult_PlainMarkdown(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": 123}, // anything; ignored!
 		Content: []byte("here be content"),
@@ -757,7 +734,7 @@ func Test_PrintResult_ErrorSerializingJSON(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": func() {}},
 		Content: []byte("here be content"),
@@ -787,7 +764,7 @@ func Test_PrintResult_ErrorSerializingYAML(t *testing.T) {
 
 	assert := assert.New(t)
 
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	cmd.Result = &frostedmd.ParseResult{
 		Meta:    map[string]interface{}{"foo": func() {}},
 		Content: []byte("here be content"),
@@ -818,7 +795,7 @@ func Test_Run_SetOptionsError(t *testing.T) {
 	assert := assert.New(t)
 
 	os.Args = []string{"test", "-j", "-y", "FILE"} // contradictory options
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	err := cmd.Run()
 	if assert.Error(err, "error on Run") {
 
@@ -836,7 +813,7 @@ func Test_Run_ParseFileError(t *testing.T) {
 	assert := assert.New(t)
 
 	os.Args = []string{"test", "no-such-file-here"} // contradictory options
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	err := cmd.Run()
 	if assert.Error(err, "error on Run") {
 		if assert.IsType(frostedmd.CmdError{}, err) {
@@ -853,20 +830,20 @@ func Test_Run_Success(t *testing.T) {
 	assert := assert.New(t)
 
 	os.Args = []string{"test", "-i", filepath.Join("test", "simple.md")}
-	cmd := frostedmd.NewCmd("testing", "1.1.0", StandardUsage)
+	cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
 	rec := testig.NewOutputRecorder()
 	cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
 	exp := `{
-    "meta": {
-        "Description": "Simple is as simple does.",
-        "Tags": [
-            "fmd",
-            "golang",
-            "nerdery"
-        ],
-        "Title": "FMD FTW"
-    },
-    "content": "PGgxPlNpbXBsZSBGTUQ8L2gxPgoKPHA+R29vZCBlbm91Z2ggZm9yIG1lLjwvcD4K"
+  "meta": {
+    "Description": "Simple is as simple does.",
+    "Tags": [
+      "fmd",
+      "golang",
+      "nerdery"
+    ],
+    "Title": "FMD FTW"
+  },
+  "content": "PGgxPlNpbXBsZSBGTUQ8L2gxPgoKPHA+R29vZCBlbm91Z2ggZm9yIG1lLjwvcD4K"
 }
 `
 
@@ -875,4 +852,56 @@ func Test_Run_Success(t *testing.T) {
 	assert.Equal(exp, rec.StdoutString(), "json on stdout")
 	assert.Equal("", rec.StderrString(), "no standard error")
 
+}
+
+// Test all the main parsing options in one place, using files for
+// (arguably) better maintainability.  Note that this won't work for
+// anything that exits out of Run().
+//
+// Test case file format is: input_opts.md and input_opts.out.
+func Test_Run_E2E(t *testing.T) {
+
+	assert := assert.New(t)
+
+	// Get everything from our test directory that looks like a test case.
+	cases := []string{}
+	dir := filepath.Join("test", "cmd_e2e")
+	infos, err := ioutil.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("Could not read dir %s: %s", dir, err.Error())
+	}
+	for _, info := range infos {
+		if !info.IsDir() && filepath.Ext(info.Name()) == ".md" {
+			cases = append(cases, strings.TrimSuffix(info.Name(), ".md"))
+		}
+	}
+
+	for _, name := range cases {
+		expFile := filepath.Join(dir, name+".out")
+		exp, err := ioutil.ReadFile(expFile)
+		if err != nil {
+			t.Fatalf("Could not read file %s: %s", expFile, err.Error())
+		}
+
+		args := []string{"testcmd"}
+		chunks := strings.Split(name, "_")
+		if len(chunks) == 2 {
+			opts := strings.Split(chunks[1], "")
+			for _, o := range opts {
+				args = append(args, "-"+o)
+			}
+		}
+		os.Args = append(args, filepath.Join(dir, name+".md"))
+		t.Log(os.Args)
+		cmd := frostedmd.NewCmd("testing", "1.1.0", frostedmd.CmdUsage)
+
+		rec := testig.NewOutputRecorder()
+		cmd.Stdout, cmd.Stderr = rec.Stdout, rec.Stderr
+
+		err = cmd.Run()
+		assert.Nil(err, "no error on Run for %s", name)
+		assert.Equal(string(exp), rec.StdoutString(),
+			"expected result on Stdout")
+
+	}
 }

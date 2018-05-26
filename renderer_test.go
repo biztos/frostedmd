@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/russross/blackfriday"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/russross/blackfriday.v1"
 
 	"github.com/biztos/frostedmd"
 )

@@ -14,7 +14,7 @@ import (
 
 	// Third-Party:
 	"github.com/docopt/docopt-go"
-	"github.com/russross/blackfriday"
+	"gopkg.in/russross/blackfriday.v1"
 	"gopkg.in/yaml.v2"
 )
 

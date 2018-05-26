@@ -155,6 +155,7 @@ which have their own licenses:
 
 ## TODO
 
+* Upgrade to blackfriday v2.
 * Add footnotes to the default extension set.
 * More documentation for the long-suffering laity.
 * Better test coverage (and arguably better tests).  100% at minimum!

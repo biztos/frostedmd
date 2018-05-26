@@ -2,7 +2,9 @@ package frostedmd
 
 import (
 	"bytes"
-	"github.com/russross/blackfriday"
+
+	// Third-party:
+	"gopkg.in/russross/blackfriday.v1"
 )
 
 // RendererTestCoverageShim is, as its name hopefully implies, a function that

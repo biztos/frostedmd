@@ -42,7 +42,7 @@ import (
 	"errors"
 
 	// Third-Party:
-	"github.com/russross/blackfriday"
+	"gopkg.in/russross/blackfriday.v1"
 	"gopkg.in/yaml.v2"
 )
 

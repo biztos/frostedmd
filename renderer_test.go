@@ -84,7 +84,7 @@ Possibly.</p>
 
 <p>Strike? <del>Struck!</del></p>
 
-<p>Note? Noted.<sup class="footnote-ref" id="fnref:1"><a rel="footnote" href="#fn:1">1</a></sup></p>
+<p>Note? Noted.<sup class="footnote-ref" id="fnref:1"><a href="#fn:1">1</a></sup></p>
 
 <pre><code class="language-go">func do() bool {
     fmt.Println(&quot;done&quot;)

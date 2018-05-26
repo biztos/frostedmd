@@ -46,12 +46,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// If true, get meta block from end of the Markdown source by default.
+// MetaBlockAtEnd defines whether the block of data is expected at the end
+// of the Markdown file, or (the default) at the beginning.
 var MetaBlockAtEnd = false
 
-// The "Common" set of Blackfriday extensions; highly recommended for
-// productive use of Markdown.
-const COMMON_EXTENSIONS = 0 |
+// BlackFridayCommonExtensions defines the "Common" set of Blackfriday
+// extensions, which are highly recommended for the productive use of
+// Markdown.
+const BlackFridayCommonExtensions = 0 |
 	blackfriday.EXTENSION_NO_INTRA_EMPHASIS |
 	blackfriday.EXTENSION_TABLES |
 	blackfriday.EXTENSION_FENCED_CODE |
@@ -62,28 +64,29 @@ const COMMON_EXTENSIONS = 0 |
 	blackfriday.EXTENSION_BACKSLASH_LINE_BREAK |
 	blackfriday.EXTENSION_DEFINITION_LISTS
 
-// The "Common" set of Blackfriday HTML flags; also highly recommended.
-const COMMON_HTML_FLAGS = 0 |
+// BlackFridayCommonHTMLFlags defines the "Common" set of Blackfriday HTML
+// flags; also highly recommended.
+const BlackFridayCommonHTMLFlags = 0 |
 	blackfriday.HTML_USE_XHTML |
 	blackfriday.HTML_USE_SMARTYPANTS |
 	blackfriday.HTML_SMARTYPANTS_FRACTIONS |
 	blackfriday.HTML_SMARTYPANTS_DASHES |
 	blackfriday.HTML_SMARTYPANTS_LATEX_DASHES
 
-// Parser defines a parser-renderer that implements the page.Parser interface.
-// It may be also be used to
+// Parser defines a parser-renderer used for converting source data to HTML
+// and metadata.
 type Parser struct {
 	MetaAtEnd          bool
 	MarkdownExtensions int // uses blackfriday EXTENSION_* constants
-	HtmlFlags          int // uses blackfridy HTML_* constants
+	HTMLFlags          int // uses blackfridy HTML_* constants
 }
 
 // New returns a new Parser with the common flags and extensions enabled.
 func New() *Parser {
 	return &Parser{
 		MetaAtEnd:          MetaBlockAtEnd,
-		MarkdownExtensions: COMMON_EXTENSIONS,
-		HtmlFlags:          COMMON_HTML_FLAGS,
+		MarkdownExtensions: BlackFridayCommonExtensions,
+		HTMLFlags:          BlackFridayCommonHTMLFlags,
 	}
 }
 
@@ -106,7 +109,7 @@ func (p *Parser) Parse(input []byte) (*ParseResult, error) {
 
 	// cf. renderer.go for the fmdRenderer definition
 	renderer := &fmdRenderer{
-		bfRenderer: blackfriday.HtmlRenderer(p.HtmlFlags,
+		bfRenderer: blackfriday.HtmlRenderer(p.HTMLFlags,
 			"", // no title
 			"", // no css
 		),

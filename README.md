@@ -6,8 +6,8 @@
 [doc]: https://godoc.org/github.com/biztos/frostedmd
 [b2]: https://travis-ci.org/biztos/frostedmd.svg?branch=master
 [ci]: https://travis-ci.org/biztos/frostedmd
-[b3]: https://coveralls.io/repos/github/biztos/frostedmd/badge.svg
-[cov]: https://coveralls.io/github/biztos/frostedmd
+[b3]: https://coveralls.io/repos/github/biztos/frostedmd/badge.svg?branch=master
+[cov]: https://coveralls.io/github/biztos/frostedmd?branch=master
 
 **WARNING: this is alpha software and should be considered unstable.**
 
